@@ -1,0 +1,39 @@
+---
+description: HomeSpan-specific rules (HomeKit on ESP32)
+globs: *.cpp, *.h, *.ino
+alwaysApply: false
+---
+
+# HomeSpan Basics
+- `homeSpan.poll()` must run in loop() on every iteration – nothing may block it
+- All accessories/services are defined in setup() AFTER `homeSpan.begin()`
+- Follow the HomeSpan structure: SpanAccessory → Service → Characteristic
+- Custom services derive from the matching `Service::...` class;
+  react to HomeKit writes in `update()`, return true/false correctly
+- Periodic work belongs in the service's `loop()` method, non-blocking,
+  millis()-based
+
+# Characteristics
+- Only update characteristics via `setVal()` when the value actually changed
+  (avoids unnecessary HomeKit notifications)
+- Read current values with `getVal()` / `getNewVal()` inside update()
+- Respect valid ranges of HAP characteristics (e.g. brightness 0-100)
+
+# WiFi & Setup
+- Use `homeSpan.enableAutoStartAP()` for first-time WiFi provisioning
+- Never hardcode WiFi credentials in the sketch – they live in NVS
+- Pairing code: 8 digits, set via `homeSpan.setPairingCode()` or serial 'S' command;
+  never use blacklisted codes (12345678, 87654321, all-same-digit)
+- ESP32-C3 is 2.4 GHz only – do not suggest 5 GHz features
+
+# Flash / Partitions
+- Sketch requires a large app partition: "Minimal SPIFFS (1.9MB APP with OTA)"
+  or "Huge APP (3MB No OTA)" – keep this in mind for OTA decisions
+- If OTA is used: `homeSpan.enableOTA()` and the OTA-capable partition scheme
+
+# Stability
+- Status LED and control button via `homeSpan.setStatusPin()` /
+  `homeSpan.setControlPin()` instead of custom implementations
+- Log via `homeSpan.setLogLevel()` / WEBLOG, not via scattered Serial.print
+- NVS writes are flash writes – do not write cyclically/frequently
+  (flash wear); persist only on real changes

@@ -1,0 +1,21 @@
+---
+description: Base rules for all projects (language, principles, response behavior)
+globs:
+alwaysApply: true
+---
+
+# Project Context
+- Target platform: ESP32-C3 with HomeSpan (Arduino framework)
+- Device runs 24/7 unattended – stability takes priority over elegance and feature scope
+
+# Response Behavior
+- Respond to the user in German
+- Keep explanations short and concrete; code comments in German
+- For every proposed change: briefly justify why it is memory- and runtime-safe
+- Never silently rewrite unrelated code – only touch what the task requires
+
+# General Principles
+- Take compiler warnings seriously – code must compile warning-free
+- Constants instead of magic numbers (prefer `constexpr`, `#define` only for legacy compatibility)
+- Meaningful variable names, no cryptic abbreviations
+- Prefer simple, proven solutions over clever ones

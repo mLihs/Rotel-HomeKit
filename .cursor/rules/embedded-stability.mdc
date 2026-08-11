@@ -1,0 +1,61 @@
+---
+description: Stability and memory rules for ESP32/C++ (embedded)
+globs: *.cpp, *.h, *.ino, *.c
+alwaysApply: true
+---
+
+# Target System
+- ESP32-C3 (RISC-V, single-core, 400 KB RAM, 4 MB flash), Arduino framework, HomeSpan
+- Device runs 24/7 unattended – stability takes priority over elegance and feature scope
+
+# Dynamic Memory / Heap Fragmentation
+- NO Arduino `String` class in loops or recurring functions –
+  use fixed-size `char` arrays with `snprintf()` instead
+- No repeated `malloc`/`free` or `new`/`delete` at runtime –
+  allocate buffers once at startup (statically or in setup())
+- No `std::string`, `std::vector` etc. with growing size in the loop;
+  if containers are needed: `reserve()` at startup, never let size grow dynamically
+- For JSON: ArduinoJson with statically sized document
+  (`StaticJsonDocument` / fixed capacity), justify the chosen size
+
+# Buffer Overflows
+- Never use `strcpy`, `strcat`, `sprintf`, `gets` – always `strlcpy`, `strlcat`,
+  `snprintf` with sizeof(buffer) as the limit
+- Always check array index access against buffer size
+- When receiving via Serial/WiFi/MQTT: validate length BEFORE copying,
+  always null-terminate input
+
+# Stack
+- No large local arrays (> 256 bytes) inside functions – declare them `static`
+  or global instead
+- No recursion
+- For custom FreeRTOS tasks: size stacks generously (min. 4096) and verify
+  with `uxTaskGetStackHighWaterMark()`
+
+# Blocking & Watchdog
+- No `delay()` > 50 ms in the main loop – use millis()-based
+  state machines (non-blocking) instead
+- No endless loops without `yield()` or `vTaskDelay()`
+- ALWAYS add a timeout to `while` loops waiting on hardware/network
+- WiFi/network operations must never block the HomeSpan loop
+
+# Robustness / Error Handling
+- Always check return values of network, file, and init functions –
+  no silent ignoring
+- After connection loss (WiFi/MQTT): automatic reconnect with backoff,
+  never reboot as the first resort
+- Handle millis() rollover (after ~49 days) correctly:
+  `if (millis() - lastTime >= interval)` – never absolute time comparisons
+- Provide `ESP.getFreeHeap()` and `ESP.getMinFreeHeap()` as diagnostics
+  (e.g. periodic log) so leaks are caught early
+
+# Concurrency / ISRs
+- Keep interrupt handlers minimal: only set a flag, mark with IRAM_ATTR,
+  no Serial output, no malloc, no delay inside ISRs
+- Declare variables shared between ISR and loop as `volatile`
+- With FreeRTOS: share data via queues/mutexes, no unprotected globals
+
+# General
+- Take compiler warnings seriously – code must compile warning-free
+- Constants instead of magic numbers (prefer `constexpr`)
+- For every change: briefly justify why it is memory- and runtime-safe

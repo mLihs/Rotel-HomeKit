@@ -1,0 +1,31 @@
+---
+description: Code style and formatting for C/C++ embedded projects
+globs: *.cpp, *.h, *.ino, *.c
+alwaysApply: false
+---
+
+# Naming
+- Functions and variables: lowerCamelCase (`readSensorValue`)
+- Constants: UPPER_SNAKE_CASE or kCamelCase for constexpr (`MAX_RETRIES`)
+- Classes/structs: UpperCamelCase (`TemperatureSensor`)
+- Pin definitions grouped at the top of the file with clear names
+  (`constexpr uint8_t PIN_RELAY = 5;`)
+
+# Structure
+- One responsibility per function; functions longer than ~40 lines get split
+- Header guards or `#pragma once` in every header
+- setup(): initialization only; loop(): dispatching only – logic lives in
+  dedicated functions/classes
+- Group related configuration in a config section or config.h
+
+# Comments
+- Comments in German, explain WHY not WHAT
+- Every non-obvious timing value, buffer size, or magic constant gets a
+  short justification comment
+- Mark workarounds clearly: `// WORKAROUND: <reason, date>`
+
+# Types
+- Fixed-width types for protocol/hardware data: `uint8_t`, `uint32_t` etc.
+- `bool` for flags, never `int`
+- `const`/`constexpr` wherever possible; pointers const-correct
+- No implicit narrowing conversions – cast explicitly and justify
